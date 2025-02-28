@@ -1,0 +1,61 @@
+name: 📚 Mejora de Documentación
+description: Sugiere mejoras para la documentación
+title: "[Docs]: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por ayudarnos a mejorar la documentación de DeFiHub!
+        
+  - type: dropdown
+    id: type
+    attributes:
+      label: Tipo de mejora
+      description: ¿Qué tipo de mejora en la documentación sugieres?
+      options:
+        - Nueva documentación
+        - Actualización de documentación existente
+        - Corrección de errores
+        - Traducción
+        - Otro
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Ubicación
+      description: ¿Dónde se encuentra la documentación que necesita mejora? (URL o ruta del archivo)
+      placeholder: "Ej: /docs/getting-started.md o https://defihub.com/docs/tutorial"
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Documentación actual
+      description: Si aplica, ¿qué dice la documentación actual?
+      placeholder: Copia el contenido actual aquí...
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Sugerencia de mejora
+      description: ¿Qué cambios sugieres?
+      placeholder: Describe los cambios que te gustaría ver...
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Información adicional
+      description: Cualquier contexto o captura de pantalla adicional que ayude a entender la mejora sugerida
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Código de Conducta
+      description: Al enviar este issue, aceptas seguir nuestro [Código de Conducta](https://example.com)
+      options:
+        - label: Acepto seguir el Código de Conducta de este proyecto
+          required: true 

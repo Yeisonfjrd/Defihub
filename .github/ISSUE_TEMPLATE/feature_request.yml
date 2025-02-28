@@ -1,0 +1,60 @@
+name: 💡 Solicitud de Característica
+description: Sugiere una idea para este proyecto
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por tu sugerencia! Nos ayuda a hacer DeFiHub mejor.
+        
+  - type: textarea
+    id: problem
+    attributes:
+      label: ¿Tu solicitud está relacionada con un problema?
+      description: Describe claramente cuál es el problema
+      placeholder: Ej. Siempre me frustro cuando [...]
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe la solución que te gustaría
+      description: Una descripción clara y concisa de lo que quieres que suceda
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+      description: Describe cualquier solución o característica alternativa que hayas considerado
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridad
+      description: ¿Qué tan importante es esta característica para ti?
+      options:
+        - Crítica (Bloqueante)
+        - Alta (Necesaria)
+        - Media (Importante)
+        - Baja (Sería bueno tenerla)
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto adicional
+      description: Agrega cualquier otro contexto o capturas de pantalla sobre la solicitud de característica aquí
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Código de Conducta
+      description: Al enviar este issue, aceptas seguir nuestro [Código de Conducta](https://example.com)
+      options:
+        - label: Acepto seguir el Código de Conducta de este proyecto
+          required: true 
