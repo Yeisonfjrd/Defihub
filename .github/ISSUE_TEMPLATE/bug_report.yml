@@ -1,0 +1,80 @@
+name: 🐛 Bug Report
+description: Crea un reporte para ayudarnos a mejorar
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por tomarte el tiempo de llenar este bug report!
+  
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: ¿Qué sucedió?
+      description: Describe el bug de la forma más clara y concisa posible
+      placeholder: Cuando intento hacer X, sucede Y en lugar de Z
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Pasos para reproducir
+      description: Pasos detallados para reproducir el comportamiento
+      placeholder: |
+        1. Ir a '...'
+        2. Click en '....'
+        3. Scroll hasta '....'
+        4. Ver error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamiento esperado
+      description: ¿Qué esperabas que sucediera?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: ¿En qué navegadores ocurre?
+      multiple: true
+      options:
+        - Firefox
+        - Chrome
+        - Safari
+        - Microsoft Edge
+        - Opera
+        - Brave
+
+  - type: dropdown
+    id: version
+    attributes:
+      label: Versión
+      description: ¿En qué versión de DeFiHub estás experimentando el problema?
+      options:
+        - 0.1.0 (Current)
+        - 0.0.9
+        - 0.0.8
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs relevantes
+      description: Por favor copia y pega cualquier log relevante. Esto será automáticamente formateado en código.
+      render: shell
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Código de Conducta
+      description: Al enviar este issue, aceptas seguir nuestro [Código de Conducta](https://example.com)
+      options:
+        - label: Acepto seguir el Código de Conducta de este proyecto
+          required: true 
