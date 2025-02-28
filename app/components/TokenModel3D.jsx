@@ -1,7 +1,7 @@
 "use client";
 import { motion, useScroll, useTransform } from "framer-motion";
 import useSound from 'use-sound';
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import * as THREE from "three";
 import { TextureLoader } from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
@@ -10,7 +10,6 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 import { RGBShiftShader } from "three/examples/jsm/shaders/RGBShiftShader";
 import { FilmPass } from "three/examples/jsm/postprocessing/FilmPass";
-import { Reflector } from "three/examples/jsm/objects/Reflector";
 import { GlitchPass } from "three/examples/jsm/postprocessing/GlitchPass";
 import { createParticleSystem, createHolographicMaterial } from "../utils/threeUtils";
 
@@ -40,46 +39,61 @@ function TokenModel3D() {
     return () => playHum.stop();
   }, []);
 
+  const setupScene = useMemo(() => {
+    return () => {
+      if (!containerRef.current) return null;
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(new THREE.Color(0x000020), 0.02);
+
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        containerRef.current.clientWidth / containerRef.current.clientHeight,
+        0.1,
+        1000
+      );
+      camera.position.z = 5;
+
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+        powerPreference: "high-performance",
+      });
+      renderer.setSize(
+        containerRef.current.clientWidth,
+        containerRef.current.clientHeight
+      );
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.2;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+      return { scene, camera, renderer };
+    };
+  }, []);
+
   useEffect(() => {
-    if (!containerRef.current) return;
+    const setup = setupScene();
+    if (!setup || !containerRef.current) return;
 
-    const scene = new THREE.Scene();
+    const { scene, camera, renderer } = setup;
     sceneRef.current = scene;
-    scene.fog = new THREE.FogExp2(new THREE.Color(0x000020), 0.02);
-
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      containerRef.current.clientWidth / containerRef.current.clientHeight,
-      0.1,
-      1000
-    );
-    camera.position.z = 5;
     cameraRef.current = camera;
-
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-      powerPreference: "high-performance",
-    });
-    renderer.setSize(
-      containerRef.current.clientWidth,
-      containerRef.current.clientHeight
-    );
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
-    containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
+    containerRef.current.appendChild(renderer.domElement);
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
+
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(5, 5, 5);
     scene.add(directionalLight);
-    const blueLight = new THREE.PointLight(0x0066ff, 1, 10);
+
+    const blueLight = new THREE.PointLight(0x0066ff, 2, 10);
     blueLight.position.set(2, 2, 2);
     scene.add(blueLight);
-    const purpleLight = new THREE.PointLight(0x9900ff, 1, 8);
+
+    const purpleLight = new THREE.PointLight(0x9900ff, 2, 8);
     purpleLight.position.set(-2, 1, -2);
     scene.add(purpleLight);
 
@@ -95,7 +109,6 @@ function TokenModel3D() {
       },
       undefined,
       (error) => {
-        console.warn("No se pudo cargar la textura del token, usando fallback.", error);
         const canvas = document.createElement("canvas");
         canvas.width = 512;
         canvas.height = 512;
@@ -129,8 +142,10 @@ function TokenModel3D() {
 
     const composer = new EffectComposer(renderer);
     composerRef.current = composer;
+
     const renderPass = new RenderPass(scene, camera);
     composer.addPass(renderPass);
+
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
       1.5,
@@ -138,22 +153,22 @@ function TokenModel3D() {
       0.85
     );
     composer.addPass(bloomPass);
+
     const rgbShiftPass = new ShaderPass(RGBShiftShader);
     rgbShiftPass.uniforms.amount.value = 0.0015;
     composer.addPass(rgbShiftPass);
+
     const filmPass = new FilmPass(0.35, 0.025, 1440, false);
-    filmPass.renderToScreen = true;
     composer.addPass(filmPass);
+
     const glitchPass = new GlitchPass();
     glitchPass.goWild = false;
-    glitchPass.enabled = false;
+    glitchPass.enabled = isHovering;
     composer.addPass(glitchPass);
 
-    const container = containerRef.current;
-    container.style.cursor = "pointer";
     const handleMouseMove = (event) => {
-      if (!container || !tokenRef.current) return;
-      const rect = container.getBoundingClientRect();
+      if (!containerRef.current || !tokenRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
       const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       const mouseY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       const targetRotationX = mouseY * 0.5;
@@ -161,36 +176,48 @@ function TokenModel3D() {
       tokenRef.current.rotation.x = Math.PI / 2 + targetRotationX * 0.3;
       tokenRef.current.rotation.y += (targetRotationY - tokenRef.current.rotation.y) * 0.1;
     };
-    container.addEventListener("mousemove", handleMouseMove);
+
+    containerRef.current.addEventListener("mousemove", handleMouseMove);
 
     const animate = () => {
       frameIdRef.current = requestAnimationFrame(animate);
       const elapsedTime = performance.now() * 0.001;
+
       if (tokenRef.current && tokenRef.current.material) {
         tokenRef.current.material.uniforms.time.value = elapsedTime;
       }
+
       if (particlesRef.current && particlesRef.current.material) {
         particlesRef.current.material.uniforms.time.value = elapsedTime;
         particlesRef.current.rotation.y += 0.001;
       }
+
       if (tokenRef.current) {
         tokenRef.current.rotation.y += 0.005;
         if (Math.abs(tokenRef.current.rotation.y % (Math.PI * 2)) < 0.01) {
           playRotate();
         }
       }
+
       float.get((value) => {
-        tokenRef.current.position.y = value;
+        if (tokenRef.current) {
+          tokenRef.current.position.y = value;
+        }
       });
+
       angle.get((value) => {
-        tokenRef.current.rotation.y = value;
+        if (tokenRef.current) {
+          tokenRef.current.rotation.y = value;
+        }
       });
+
       composer.render();
     };
+
     frameIdRef.current = requestAnimationFrame(animate);
 
     const handleResize = () => {
-      if (!containerRef.current) return;
+      if (!containerRef.current || !camera || !renderer || !composer) return;
       const width = containerRef.current.clientWidth;
       const height = containerRef.current.clientHeight;
       camera.aspect = width / height;
@@ -198,13 +225,14 @@ function TokenModel3D() {
       renderer.setSize(width, height);
       composer.setSize(width, height);
     };
+
     window.addEventListener("resize", handleResize);
 
     return () => {
       window.removeEventListener("resize", handleResize);
-      container.removeEventListener("mousemove", handleMouseMove);
+      containerRef.current?.removeEventListener("mousemove", handleMouseMove);
       if (frameIdRef.current) cancelAnimationFrame(frameIdRef.current);
-      if (rendererRef.current && rendererRef.current.domElement) {
+      if (rendererRef.current?.domElement) {
         rendererRef.current.domElement.remove();
       }
       scene.traverse((object) => {
@@ -216,12 +244,13 @@ function TokenModel3D() {
       renderer.dispose();
       composer.dispose();
     };
-  }, [isHovering]);
+  }, [setupScene, isHovering]);
 
   useEffect(() => {
     const camera = cameraRef.current;
     const token = tokenRef.current;
     if (!camera || !token) return;
+
     const radius = 5;
     const height = 2;
     const updateCameraPosition = (latest) => {
@@ -231,6 +260,7 @@ function TokenModel3D() {
       camera.position.y = height + float.get();
       camera.lookAt(token.position);
     };
+
     const unsub = angle.on("change", updateCameraPosition);
     updateCameraPosition(angle.get());
     return () => unsub();
@@ -239,7 +269,7 @@ function TokenModel3D() {
   return (
     <motion.div
       ref={containerRef}
-      className="w-full h-[600px] relative rounded-xl overflow-hidden"
+      className="w-full h-[600px] relative rounded-xl overflow-hidden bg-slate-900/50 backdrop-blur-xl"
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
@@ -253,21 +283,21 @@ function TokenModel3D() {
         }}
         transition={{ duration: 0.4 }}
       >
-        <div className="bg-black/40 p-6 rounded-2xl backdrop-blur-lg max-w-md">
-          <h3 className="text-white text-3xl font-bold mb-3">DHB Token</h3>
-          <p className="text-blue-300 text-lg mb-4">Potencia todo el ecosistema</p>
-          <div className="grid grid-cols-3 gap-4 text-sm">
-            <div className="bg-blue-500/20 p-3 rounded-lg">
-              <div className="font-bold text-white">Total Supply</div>
-              <div className="text-blue-200">100M</div>
+        <div className="bg-black/40 p-8 rounded-2xl backdrop-blur-xl max-w-md">
+          <h3 className="text-white text-4xl font-bold mb-4">DHB Token</h3>
+          <p className="text-blue-300 text-xl mb-6">Potencia todo el ecosistema</p>
+          <div className="grid grid-cols-3 gap-6 text-sm">
+            <div className="bg-blue-500/20 p-4 rounded-xl">
+              <div className="font-bold text-white text-lg">Total Supply</div>
+              <div className="text-blue-200 text-2xl">100M</div>
             </div>
-            <div className="bg-blue-500/20 p-3 rounded-lg">
-              <div className="font-bold text-white">Staking APY</div>
-              <div className="text-blue-200">12.5%</div>
+            <div className="bg-blue-500/20 p-4 rounded-xl">
+              <div className="font-bold text-white text-lg">Staking APY</div>
+              <div className="text-blue-200 text-2xl">12.5%</div>
             </div>
-            <div className="bg-blue-500/20 p-3 rounded-lg">
-              <div className="font-bold text-white">Utility</div>
-              <div className="text-blue-200">Governance</div>
+            <div className="bg-blue-500/20 p-4 rounded-xl">
+              <div className="font-bold text-white text-lg">Utility</div>
+              <div className="text-blue-200 text-2xl">Governance</div>
             </div>
           </div>
         </div>
