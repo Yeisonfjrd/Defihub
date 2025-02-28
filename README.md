@@ -10,16 +10,16 @@ Defihub is a modern web application built with Next.js that provides a platform 
 - Real-time data updates
 
 ## Tech Stack
-- Next.js
-- React
+- Next.js 15.1.7
+- React 19
 - TypeScript
 - Tailwind CSS
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn
+- Node.js (>= 18.18.0)
+- npm (>= 10.8.2) or yarn
 
 ### Installation
 1. Clone the repository
